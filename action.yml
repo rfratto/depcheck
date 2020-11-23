@@ -1,0 +1,14 @@
+name: Check Dependencies
+description: Check dependencies of a project and create issues if that project has out of date dependencies.
+inputs:
+  repository:
+    description: 'repository to check'
+    required: false
+    default: '.'
+  config_path:
+    description: 'path in repo containing config file'
+    required: false
+    default: '.github/dependencies.yml'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
