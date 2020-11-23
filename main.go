@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -39,7 +40,22 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("Label: %v\n", cfg.OutdatedLabel)
-	fmt.Printf("Go Modules: %v\n", cfg.GoModules)
-	fmt.Printf("Repos: %v\n", cfg.Repos)
+	t := tracker.New(cfg, repoPath)
+	deps, err := t.CheckOutdated(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if len(deps) == 0 {
+		return
+	}
+
+	fmt.Printf("Out of date dependencies:\n\n")
+
+	for _, dep := range deps {
+		fmt.Printf("\tName:      %s\n", dep.Name)
+		fmt.Printf("\tVersion:   %s\n", dep.CurrentVersion)
+		fmt.Printf("\tAvailable: %s\n", dep.LatestVersion)
+		fmt.Println()
+	}
 }

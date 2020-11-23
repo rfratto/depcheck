@@ -1,63 +1,46 @@
 package tracker
 
-import (
-	"fmt"
-	"os"
+import "context"
 
-	"gopkg.in/yaml.v2"
-)
-
-// Config represents the tracker configuration.
-type Config struct {
-	// IssueRepository is the repo to create issues in. If empty, defaults to
-	// GITHUB_REPOSITORY and fails if neither is set.
-	IssueRepository string `yaml:"issue_repository"`
-
-	// OutdatedLabel is the label to attach to created issues.
-	OutdatedLabel string `yaml:"outdated_label"`
-
-	// GoModules are a list of go module dependencies to check.
-	GoModules []string `yaml:"go_modules"`
-
-	// Repos are a list of github repos to check.
-	Repos []string `yaml:"repos"`
+// Tracker can return a list of outdated dependencies.
+type Tracker interface {
+	// CheckOutdated should return a list of only outdated dependencies.
+	CheckOutdated(ctx context.Context) ([]Dependency, error)
 }
 
-// UnmarshalYAML unmarshals the Config with defaults applied.
-func (c *Config) UnmarshalYAML(f func(v interface{}) error) error {
-	type config Config
-	var val config
-	if err := f(&val); err != nil {
-		return err
-	}
-
-	*c = Config(val)
-	return c.SetDefaults()
+// Dependency is a named dependency with the current version being used
+// and the latest version available.
+type Dependency struct {
+	Name           string
+	CurrentVersion string
+	LatestVersion  string
 }
 
-// SetDefaults applies default values to fields in the config.
-func (c *Config) SetDefaults() error {
-	if c.IssueRepository == "" {
-		c.IssueRepository = os.Getenv("GITHUB_REPOSITORY")
+// New creates a new Tracker that can return outdated dependencies.
+func New(c *Config, repo string) Tracker {
+	var trackers []Tracker
+	if len(c.GoModules) > 0 {
+		trackers = append(trackers, NewGoModules(repo, c.GoModules))
 	}
-	if c.IssueRepository == "" {
-		return fmt.Errorf("either GITHUB_REPOSITORY must be set in environment or issue_repository must be set in config")
-	}
-
-	return nil
+	return &Multi{trackers: trackers}
 }
 
-// LoadConfig loads the Config via a file. The file is expected to be YAML.
-func LoadConfig(path string) (*Config, error) {
-	f, err := os.Open(path)
-	if f != nil {
-		defer f.Close()
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to open config: %w", err)
+// Multi combines multiple trackers.
+type Multi struct {
+	trackers []Tracker
+}
+
+// CheckOutdated calls CheckOutdated for each tracker in the list.
+func (m *Multi) CheckOutdated(ctx context.Context) ([]Dependency, error) {
+	var deps []Dependency
+
+	for _, t := range m.trackers {
+		tDeps, err := t.CheckOutdated(ctx)
+		if err != nil {
+			return nil, err
+		}
+		deps = append(deps, tDeps...)
 	}
 
-	var c Config
-	err = yaml.NewDecoder(f).Decode(&c)
-	return &c, err
+	return deps, nil
 }
