@@ -9,6 +9,9 @@ inputs:
     description: 'path in repo containing config file'
     required: false
     default: '.github/dependencies.yml'
+  dry_run:
+    description: 'when true, only print outdated dependencies in output'
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'

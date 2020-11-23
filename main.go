@@ -15,17 +15,20 @@ func main() {
 	var (
 		repoPath   string
 		configPath string
+		dryRun     bool
 	)
 
 	f := flag.NewFlagSet("dependency-tracker", flag.ExitOnError)
 	f.StringVar(&repoPath, "repository", ".", "repository to check dependencies for")
 	f.StringVar(&configPath, "config-path", ".github/dependencies.yml", "config file for the dependency tracker")
+	f.BoolVar(&dryRun, "dry-run", false, "don't actually create the issues")
 
 	// Load in values that may be passed in via GitHub. This should be done
 	// *after* declaring the flags (which may define defaults) but *before*
 	// parsing the flags (which may override these values).
 	repoPath = core.GetInputOrDefault("repository", repoPath)
 	configPath = core.GetInputOrDefault("config_path", configPath)
+	dryRun = core.GetBoolInput("dry_run")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
 		log.Fatalln(err)
