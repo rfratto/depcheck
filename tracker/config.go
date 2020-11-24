@@ -11,6 +11,7 @@ import (
 var DefaultConfig = Config{
 	IssueTitleTemplate: "Update {{.Name}} to {{.LatestVersion}}",
 	IssueTextTemplate:  "An update for `{{.Name}}` (version `{{.LatestVersion}}`) is now available. Version `{{.CurrentVersion}}` is currently in use.",
+	OutdatedLabel:      "outdated-dependency",
 }
 
 // Config represents the tracker configuration.
