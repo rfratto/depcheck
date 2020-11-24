@@ -1,6 +1,10 @@
 package tracker
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/go-github/v32/github"
+)
 
 // Tracker can return a list of outdated dependencies.
 type Tracker interface {
@@ -17,13 +21,13 @@ type Dependency struct {
 }
 
 // New creates a new Tracker that can return outdated dependencies.
-func New(c *Config, repo string) Tracker {
+func New(c *Config, repo string, cli *github.Client) Tracker {
 	var trackers []Tracker
 	if len(c.GoModules) > 0 {
 		trackers = append(trackers, NewGoModules(repo, c.GoModules))
 	}
 	if len(c.GithubDeps) > 0 {
-		trackers = append(trackers, NewGithub(c.GithubDeps))
+		trackers = append(trackers, NewGithub(c.GithubDeps, cli))
 	}
 	return &Multi{trackers: trackers}
 }

@@ -8,11 +8,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var DefaultConfig = Config{
+	IssueTitleTemplate: "Update {{.Name}} to {{.LatestVersion}}",
+	IssueTextTemplate:  "An update for `{{.Name}}` (version `{{.LatestVersion}}`) is now available. Version `{{.CurrentVersion}}` is currently in use.",
+}
+
 // Config represents the tracker configuration.
 type Config struct {
 	// IssueRepository is the repo to create issues in. If empty, defaults to
 	// GITHUB_REPOSITORY and fails if neither is set.
 	IssueRepository string `yaml:"issue_repository"`
+
+	// IssueTitleTemplate and IssueTextTemplate are go text/templates that will be
+	// used for creating the issue titles and content, respectively.
+	IssueTitleTemplate string `yaml:"issue_title_template"`
+	IssueTextTemplate  string `yaml:"issue_text_template"`
 
 	// OutdatedLabel is the label to attach to created issues.
 	OutdatedLabel string `yaml:"outdated_label"`
@@ -32,6 +42,8 @@ func (c *Config) UnmarshalYAML(f func(v interface{}) error) error {
 		GithubRepos []string `yaml:"github_repos"`
 	}
 	var val fullConfig
+	val.config = config(DefaultConfig)
+
 	if err := f(&val); err != nil {
 		return err
 	}

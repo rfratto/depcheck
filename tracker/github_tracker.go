@@ -12,6 +12,7 @@ import (
 // Github checks for outdated dependencies on Github projects.
 type Github struct {
 	check []GithubDependency
+	cli   *github.Client
 }
 
 // GithubDependency is a dependency on a Github project.
@@ -21,15 +22,13 @@ type GithubDependency struct {
 }
 
 // NewGithub creates a new Github tracker.
-func NewGithub(check []GithubDependency) *Github {
-	return &Github{check: check}
+func NewGithub(check []GithubDependency, cli *github.Client) *Github {
+	return &Github{check: check, cli: cli}
 }
 
 // CheckOutdated will return the list of go module dependencies that can be updated.
 func (c *Github) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 	var outdated []Dependency
-
-	client := github.NewClient(nil)
 
 	for _, d := range c.check {
 		// Trim out github.com/ from the name, but it'll be added back later.
@@ -43,7 +42,7 @@ func (c *Github) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 			repo  = nameParts[1]
 		)
 
-		tags, _, err := client.Repositories.ListTags(ctx, owner, repo, &github.ListOptions{
+		tags, _, err := c.cli.Repositories.ListTags(ctx, owner, repo, &github.ListOptions{
 			Page:    0,
 			PerPage: 1,
 		})
