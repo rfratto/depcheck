@@ -24,7 +24,7 @@ func main() {
 
 	f := flag.NewFlagSet("dependency-tracker", flag.ExitOnError)
 	f.StringVar(&repoPath, "repository", ".", "repository to check dependencies for")
-	f.StringVar(&configPath, "config-path", ".github/dependencies.yml", "config file for the dependency tracker")
+	f.StringVar(&configPath, "config-path", ".github/depcheck.yml", "config file for the dependency tracker")
 	f.StringVar(&githubToken, "github-token", "", "github token to use")
 	f.BoolVar(&dryRun, "dry-run", false, "don't actually create the issues")
 

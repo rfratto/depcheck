@@ -8,7 +8,7 @@ inputs:
   config_path:
     description: 'path in repo containing config file'
     required: false
-    default: '.github/dependencies.yml'
+    default: '.github/depcheck.yml'
   dry_run:
     description: 'when true, only print outdated dependencies in output'
     required: false
