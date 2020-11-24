@@ -3,6 +3,7 @@ package tracker
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -19,19 +20,35 @@ type Config struct {
 	// GoModules are a list of go module dependencies to check.
 	GoModules []string `yaml:"go_modules"`
 
-	// Repos are a list of github repos to check.
-	Repos []string `yaml:"repos"`
+	// GithubDeps are a list of github repos to check.
+	GithubDeps []GithubDependency
 }
 
 // UnmarshalYAML unmarshals the Config with defaults applied.
 func (c *Config) UnmarshalYAML(f func(v interface{}) error) error {
 	type config Config
-	var val config
+	type fullConfig struct {
+		config      `yaml:",inline"`
+		GithubRepos []string `yaml:"github_repos"`
+	}
+	var val fullConfig
 	if err := f(&val); err != nil {
 		return err
 	}
 
-	*c = Config(val)
+	*c = Config(val.config)
+
+	for _, r := range val.GithubRepos {
+		depParts := strings.SplitN(r, " ", 2)
+		if len(depParts) != 2 {
+			return fmt.Errorf("invalid dependency %s: expected format '[owner]/[name] [version]'", r)
+		}
+		c.GithubDeps = append(c.GithubDeps, GithubDependency{
+			Project: depParts[0],
+			Version: depParts[1],
+		})
+	}
+
 	return c.SetDefaults()
 }
 

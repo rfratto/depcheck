@@ -22,6 +22,9 @@ func New(c *Config, repo string) Tracker {
 	if len(c.GoModules) > 0 {
 		trackers = append(trackers, NewGoModules(repo, c.GoModules))
 	}
+	if len(c.GithubDeps) > 0 {
+		trackers = append(trackers, NewGithub(c.GithubDeps))
+	}
 	return &Multi{trackers: trackers}
 }
 
