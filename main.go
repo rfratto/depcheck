@@ -59,6 +59,7 @@ func main() {
 		return
 	}
 
+	fmt.Printf("Issues will be created in %s\n", cfg.IssueRepository)
 	fmt.Printf("Out of date dependencies:\n\n")
 
 	for _, dep := range deps {
