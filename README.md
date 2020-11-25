@@ -5,6 +5,21 @@ create GitHub issues for dependencies that are out of date. If you want to opt
 out of updating a dependency to a new version, simply close the issue - the
 issue for that dependency version won't be created again.
 
+### Why not Dependabot?
+
+[Dependabot](https://dependabot.com/) is extremely cool and infinitely more
+powerful than `depcheck`. Depcheck was designed to meet the following needs:
+
+1. Tracking dependencies that may be implicit (e.g., you depend on a repo but
+   only use release assets, or you have a fork with changes from an upstream
+   repo and want to be notified when the upstream repo changes)
+
+2. Your dependencies frequently make breaking API changes and would find issues
+   more useful than pull requests.
+
+So unless you have these very specific and niche needs, you should try
+Dependabot instead!
+
 ## Configuring
 
 `depcheck` looks for a `.github/depcheck.yml` file from the current working
@@ -87,3 +102,4 @@ The following inputs are available:
 ## Roadmap
 
 - [ ] Jsonnet dependencies
+
