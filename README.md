@@ -72,6 +72,8 @@ jobs:
 
     - name: Invoke action
       uses: rfratto/depcheck@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 The following inputs are available:
