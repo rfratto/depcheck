@@ -77,9 +77,10 @@ jobs:
 The following inputs are available:
 
 - `repository` coressponds to the `-repository` flag.
-- `config_path` coressponds to the `-config-path` flag.
-- `dry_run` coressponds to the `-dry-run` flag and will stop at printing out the
+- `config-path` coressponds to the `-config-path` flag.
+- `dry-run` coressponds to the `-dry-run` flag and will stop at printing out the
    outdated dependencies and not actually create any issues.
+- `github-token` corresponds to the `-github-token` flag.
 
 ## Roadmap
 

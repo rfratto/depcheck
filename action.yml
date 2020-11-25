@@ -5,13 +5,16 @@ inputs:
     description: 'repository to check'
     required: false
     default: '.'
-  config_path:
+  config-path:
     description: 'path in repo containing config file'
     required: false
     default: '.github/depcheck.yml'
-  dry_run:
+  dry-run:
     description: 'when true, only print outdated dependencies in output'
     required: false
+  github-token:
+    description: 'token to use for authenticating requests to open issues'
+    required: true
 runs:
   using: 'docker'
   image: 'Dockerfile'

@@ -32,8 +32,8 @@ func main() {
 	// *after* declaring the flags (which may define defaults) but *before*
 	// parsing the flags (which may override these values).
 	repoPath = core.GetInputOrDefault("repository", repoPath)
-	configPath = core.GetInputOrDefault("config_path", configPath)
-	dryRun = core.GetBoolInput("dry_run")
+	configPath = core.GetInputOrDefault("config-path", configPath)
+	dryRun = core.GetBoolInput("dry-run")
 	githubToken = getGithubToken()
 
 	if err := f.Parse(os.Args[1:]); err != nil {
