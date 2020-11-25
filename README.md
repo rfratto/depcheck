@@ -71,7 +71,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Invoke action
-      uses: rfratto/depcheck@master
+      uses: rfratto/depcheck@main
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
