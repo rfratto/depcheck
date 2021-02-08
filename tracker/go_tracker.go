@@ -27,7 +27,7 @@ func NewGoModules(module string, check []string) *GoModules {
 // CheckOutdated will return the list of go module dependencies that can be updated.
 func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 	var outdated []Dependency
-	goArgs := append([]string{"list", "-json", "-u", "-m"}, c.check...)
+	goArgs := append([]string{"list", "-mod=readonly", "-json", "-u", "-m"}, c.check...)
 
 	var out bytes.Buffer
 
