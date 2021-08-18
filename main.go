@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/actions-go/toolkit/core"
 	"github.com/google/go-github/v32/github"
@@ -16,10 +17,11 @@ import (
 
 func main() {
 	var (
-		repoPath    string
-		configPath  string
-		githubToken string
-		dryRun      bool
+		repoPath      string
+		configPath    string
+		githubToken   string
+		dryRun        bool
+		closeOutdated bool
 	)
 
 	f := flag.NewFlagSet("dependency-tracker", flag.ExitOnError)
@@ -27,13 +29,15 @@ func main() {
 	f.StringVar(&configPath, "config-path", ".github/depcheck.yml", "config file for the dependency tracker")
 	f.StringVar(&githubToken, "github-token", "", "github token to use")
 	f.BoolVar(&dryRun, "dry-run", false, "don't actually create the issues")
+	f.BoolVar(&closeOutdated, "close-oudated", true, "close oudated issues after creating a new one")
 
 	// Load in values that may be passed in via GitHub. This should be done
 	// *after* declaring the flags (which may define defaults) but *before*
 	// parsing the flags (which may override these values).
 	repoPath = core.GetInputOrDefault("repository", repoPath)
 	configPath = core.GetInputOrDefault("config-path", configPath)
-	dryRun = core.GetBoolInput("dry-run")
+	dryRun = boolOrDefault("dry-run", dryRun)
+	closeOutdated = boolOrDefault("close-oudated", closeOutdated)
 	githubToken = getGithubToken()
 
 	if err := f.Parse(os.Args[1:]); err != nil {
@@ -79,9 +83,19 @@ func main() {
 	}
 
 	for _, dep := range deps {
-		_, err := creator.CreateIssue(context.Background(), dep)
+		iss, err := creator.CreateIssue(context.Background(), dep)
 		if err != nil {
 			log.Printf("failed to create issue for %s: %s", dep.Name, err)
+			continue
+		}
+
+		if !closeOutdated {
+			continue
+		}
+		err = creator.CloseOutdated(context.Background(), iss, dep)
+		if err != nil {
+			log.Printf("failed to closed outdated issues for %s: %s", dep.Name, err)
+			continue
 		}
 	}
 }
@@ -98,4 +112,12 @@ func getGithubToken() string {
 		}
 	}
 	return ""
+}
+
+func boolOrDefault(name string, defaultValue bool) bool {
+	defaultStr := "false"
+	if defaultValue {
+		defaultStr = "true"
+	}
+	return strings.ToLower(core.GetInputOrDefault(name, defaultStr)) == "true"
 }

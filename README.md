@@ -109,6 +109,7 @@ The following inputs are available:
 - `dry-run` coressponds to the `-dry-run` flag and will stop at printing out the
    outdated dependencies and not actually create any issues.
 - `github-token` corresponds to the `-github-token` flag.
+- `close-outdated` corresponds to the `-close-oudated` flag.
 
 ## Roadmap
 

@@ -75,7 +75,13 @@ func (c *IssueCreator) FindIssue(ctx context.Context, dep Dependency) (*github.I
 		return nil, fmt.Errorf("failed to generate expected issue: %w", err)
 	}
 
-	res, _, err := c.cli.Search.Issues(ctx, fmt.Sprintf(`"%s" repo:%s`, expectedIssue.GetTitle(), c.c.IssueRepository), &github.SearchOptions{})
+	query := fmt.Sprintf(
+		`"%s" repo:"%s" label:"%s" in:title`,
+		expectedIssue.GetTitle(),
+		c.c.IssueRepository,
+		c.c.OutdatedLabel,
+	)
+	res, _, err := c.cli.Search.Issues(ctx, query, &github.SearchOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for issues: %w", err)
 	}
@@ -123,4 +129,58 @@ func parseGithubRepo(fullRepo string) (owner, repo string, err error) {
 		return
 	}
 	return parts[0], parts[1], nil
+}
+
+// CloseOutdated closes issues for dep that are older than latest.
+func (c *IssueCreator) CloseOutdated(ctx context.Context, latest *github.Issue, dep Dependency) error {
+	genericDep := dep
+	genericDep.LatestVersion = "*"
+
+	genericIss, err := c.issueRequest(genericDep)
+	if err != nil {
+		return fmt.Errorf("failed to generate oudated issue pattern: %w", err)
+	}
+
+	repoOwner, repoName, err := parseGithubRepo(c.c.IssueRepository)
+	if err != nil {
+		return fmt.Errorf("couldn't parse issue repo: %w", err)
+	}
+
+	searchQuery := fmt.Sprintf(
+		`"%s" repo:"%s" label:"%s" in:title is:open`,
+		genericIss.GetTitle(),
+		c.c.IssueRepository,
+		c.c.OutdatedLabel,
+	)
+
+	res, _, err := c.cli.Search.Issues(ctx, searchQuery, &github.SearchOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to search for issues: %w", err)
+	}
+	for _, iss := range res.Issues {
+		if iss.GetID() == latest.GetID() || iss.GetID() == 0 {
+			continue
+		}
+
+		var (
+			closed  = "closed"
+			comment = fmt.Sprintf("Closing in favor of #%d", latest.GetNumber())
+		)
+
+		_, _, err := c.cli.Issues.CreateComment(ctx, repoOwner, repoName, iss.GetNumber(), &github.IssueComment{
+			Body: &comment,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to make comment on #%d: %w", iss.GetNumber(), err)
+		}
+
+		_, _, err = c.cli.Issues.Edit(ctx, repoOwner, repoName, iss.GetNumber(), &github.IssueRequest{
+			State: &closed,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to close outdated issue #%d: %w", iss.GetNumber(), err)
+		}
+	}
+
+	return nil
 }

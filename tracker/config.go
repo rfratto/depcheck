@@ -67,6 +67,15 @@ func (r *Regexp) UnmarshalYAML(f func(v interface{}) error) error {
 	return err
 }
 
+func (c *Config) UnmarshalYAML(f func(v interface{}) error) error {
+	*c = DefaultConfig
+	type config Config
+	if err := f((*config)(c)); err != nil {
+		return err
+	}
+	return c.SetDefaults()
+}
+
 // SetDefaults applies default values to fields in the config.
 func (c *Config) SetDefaults() error {
 	if c.IssueRepository == "" {
