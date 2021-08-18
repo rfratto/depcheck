@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/google/go-github/v32/github"
 )
@@ -34,7 +35,8 @@ func New(c *Config, repo string, cli *github.Client) Tracker {
 
 // Multi combines multiple trackers.
 type Multi struct {
-	trackers []Tracker
+	trackers        []Tracker
+	ignorePrelrease *regexp.Regexp
 }
 
 // CheckOutdated calls CheckOutdated for each tracker in the list.

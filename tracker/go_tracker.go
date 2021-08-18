@@ -13,11 +13,49 @@ import (
 // GoModules checks for outdated dependencies for Go modules.
 type GoModules struct {
 	module string
-	check  []string
+	check  []GoModule
+}
+
+// GoModule is an individual module to check.
+type GoModule struct {
+	Name    string            `yaml:"name"`
+	Options DependencyOptions `yaml:",inline"`
+}
+
+// UnmarshalYAML unmarshals a GoModule. The value can either be a string
+// or the GoModule struct.
+func (m *GoModule) UnmarshalYAML(f func(v interface{}) error) error {
+	var (
+		stringError error
+		objectError error
+	)
+
+	// Try as a raw string
+	var s string
+	stringError = f(&s)
+	if stringError == nil {
+		m.Name = s
+		return nil
+	}
+
+	// Then a whole object
+	type goModule GoModule
+	var v goModule
+	objectError = f(&v)
+	if objectError == nil {
+		*m = GoModule(v)
+		return nil
+	}
+
+	return fmt.Errorf(
+		"could not parse go module as a string (%s) or an object (%s)",
+		stringError,
+		objectError,
+	)
 }
 
 // NewGoModules creates a new GoModules tracker.
-func NewGoModules(module string, check []string) *GoModules {
+func NewGoModules(module string, check []GoModule) *GoModules {
 	return &GoModules{
 		module: module,
 		check:  check,
@@ -26,8 +64,17 @@ func NewGoModules(module string, check []string) *GoModules {
 
 // CheckOutdated will return the list of go module dependencies that can be updated.
 func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
+	var (
+		moduleNames = make([]string, len(c.check))
+		moduleMap   = make(map[string]GoModule)
+	)
+	for i := 0; i < len(c.check); i++ {
+		moduleNames[i] = c.check[i].Name
+		moduleMap[c.check[i].Name] = c.check[i]
+	}
+
 	var outdated []Dependency
-	goArgs := append([]string{"list", "-mod=readonly", "-json", "-u", "-m"}, c.check...)
+	goArgs := append([]string{"list", "-mod=readonly", "-json", "-u", "-m"}, moduleNames...)
 
 	var out bytes.Buffer
 
@@ -55,6 +102,13 @@ func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 		// No update available, skip it
 		if dep.Update == nil {
 			continue
+		}
+
+		// Check to see if we're ignoring this version
+		if ref, ok := moduleMap[dep.Path]; ok {
+			if ref.Options.IgnoreVersionPattern.Matches(dep.Update.Version) {
+				continue
+			}
 		}
 
 		outdated = append(outdated, Dependency{

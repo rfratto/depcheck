@@ -32,8 +32,13 @@ The `depcheck` YAML config file takes these options:
 ```yaml
 # List of go modules to check for outdated-ness. Prometheus is listed as an
 # example; all modules listed here must be used in your go.mod.
+#
+# You can use a regexp to ignore specific versions by passing an object
+# as a dependency instead of a string.
 go_modules:
-  - github.com/prometheus/prometheus
+  - github.com/grafana/agent
+  - name: github.com/prometheus/prometheus
+    ignore_version_pattern: "-rc\.\d+$" # Ignore release candidates
 
 # List of Github repos to check for newer tags. The versions here must be listed
 # and updated manually; there is no magic to determine what is being used. This
@@ -42,8 +47,14 @@ go_modules:
 #
 # "github.com/" may be omitted as a prefix, but the dependency name listed in
 # issues will always display as prefixed with github.com/.
+#
+# You can use a regexp to ignore specific versions by passing an object
+# as a dependency instead of a string.
 github_repos:
   - github.com/rfratto/depcheck v0.1.0
+  - project: github.com/prometheus/node_exporter
+    version: v0.18.1
+    ignore_version_pattern: "-rc\.\d+$" # Ignore release candidates
 
 # Repository to create issues in. If empty or undefined, defaults to
 # GITHUB_REPOSITORY in environment variables. Must be set either here or via the

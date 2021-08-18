@@ -3,7 +3,7 @@ package tracker
 import (
 	"fmt"
 	"os"
-	"strings"
+	"regexp"
 
 	"gopkg.in/yaml.v2"
 )
@@ -29,40 +29,42 @@ type Config struct {
 	OutdatedLabel string `yaml:"outdated_label"`
 
 	// GoModules are a list of go module dependencies to check.
-	GoModules []string `yaml:"go_modules"`
+	GoModules []GoModule `yaml:"go_modules"`
 
 	// GithubDeps are a list of github repos to check.
-	GithubDeps []GithubDependency
+	GithubDeps []GithubDependency `yaml:"github_repos"`
 }
 
-// UnmarshalYAML unmarshals the Config with defaults applied.
-func (c *Config) UnmarshalYAML(f func(v interface{}) error) error {
-	type config Config
-	type fullConfig struct {
-		config      `yaml:",inline"`
-		GithubRepos []string `yaml:"github_repos"`
-	}
-	var val fullConfig
-	val.config = config(DefaultConfig)
+// DependencyOptions are options for individual dependencies.
+type DependencyOptions struct {
+	// IgnoreVersionPattern is a pattern that allows you to ignore specific
+	// versions matching the given string.
+	IgnoreVersionPattern *Regexp `yaml:"ignore_version_pattern"`
+}
 
-	if err := f(&val); err != nil {
+// Regexp is a regex that can be unmarshaled from a string.
+type Regexp regexp.Regexp
+
+// Matches returns true if s matches the regular expression.
+func (r *Regexp) Matches(s string) bool {
+	if r == nil {
+		return false
+	}
+	return (*regexp.Regexp)(r).MatchString(s)
+}
+
+func (r *Regexp) UnmarshalYAML(f func(v interface{}) error) error {
+	var s string
+	if err := f(&s); err != nil {
 		return err
 	}
 
-	*c = Config(val.config)
-
-	for _, r := range val.GithubRepos {
-		depParts := strings.SplitN(r, " ", 2)
-		if len(depParts) != 2 {
-			return fmt.Errorf("invalid dependency %s: expected format '[owner]/[name] [version]'", r)
-		}
-		c.GithubDeps = append(c.GithubDeps, GithubDependency{
-			Project: depParts[0],
-			Version: depParts[1],
-		})
+	c, err := regexp.Compile(s)
+	if err != nil {
+		return fmt.Errorf("invalid regex: %w", err)
 	}
-
-	return c.SetDefaults()
+	*r = Regexp(*c)
+	return err
 }
 
 // SetDefaults applies default values to fields in the config.
