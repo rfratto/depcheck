@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os/exec"
 	"time"
 )
@@ -74,7 +75,7 @@ func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 	}
 
 	var outdated []Dependency
-	goArgs := append([]string{"list", "-mod=readonly", "-json", "-u", "-m"}, moduleNames...)
+	goArgs := append([]string{"list", "-mod=readonly", "-json", "-e", "-u", "-m"}, moduleNames...)
 
 	var out bytes.Buffer
 
@@ -83,7 +84,7 @@ func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 	cmd.Dir = c.module
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed running go command: %w", err)
+		return nil, fmt.Errorf("failed running go command %q: %w", cmd, err)
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(out.Bytes()))
@@ -96,7 +97,8 @@ func (c *GoModules) CheckOutdated(ctx context.Context) ([]Dependency, error) {
 		}
 
 		if dep.Error != nil {
-			return nil, fmt.Errorf("error loading module %s: %w", dep.Path, dep.Error)
+			log.Printf("Ingnoring dependency %s with error: %s", dep.Path, dep.Error)
+			continue
 		}
 
 		// No update available, skip it
