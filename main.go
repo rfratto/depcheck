@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/actions-go/toolkit/core"
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/rfratto/depcheck/tracker"
 	"golang.org/x/oauth2"
 )

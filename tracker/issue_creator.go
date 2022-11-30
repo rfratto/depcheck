@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v48/github"
 )
 
 var ErrIssueNotFound = errors.New("no such issue")
@@ -163,8 +163,9 @@ func (c *IssueCreator) CloseOutdated(ctx context.Context, latest *github.Issue, 
 		}
 
 		var (
-			closed  = "closed"
-			comment = fmt.Sprintf("Closing in favor of #%d", latest.GetNumber())
+			closed      = "closed"
+			closeReason = "not_planned"
+			comment     = fmt.Sprintf("Closing in favor of #%d", latest.GetNumber())
 		)
 
 		_, _, err := c.cli.Issues.CreateComment(ctx, repoOwner, repoName, iss.GetNumber(), &github.IssueComment{
@@ -175,7 +176,8 @@ func (c *IssueCreator) CloseOutdated(ctx context.Context, latest *github.Issue, 
 		}
 
 		_, _, err = c.cli.Issues.Edit(ctx, repoOwner, repoName, iss.GetNumber(), &github.IssueRequest{
-			State: &closed,
+			State:       &closed,
+			StateReason: &closeReason,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to close outdated issue #%d: %w", iss.GetNumber(), err)
